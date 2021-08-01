@@ -1,6 +1,9 @@
 /lib/
 /nbproject/
+/test/
+/nbbuild.xml
 /build/
 /dist/
-/build.xml
-/manifest.mf
+/lib/
+build.xml
+manifest.mf
