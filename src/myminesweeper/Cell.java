@@ -7,12 +7,8 @@ package myminesweeper;
 
 import java.awt.Point;
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JOptionPane;
 
 /**
  *
@@ -31,7 +27,6 @@ public class Cell extends JButton{
     */
     
     // Fields
-    //private ArrayList<Cell> perimeter;
     private Perimeter<Cell> perimeter;
     private Board myBoard;
     /**
@@ -169,13 +164,7 @@ public class Cell extends JButton{
     }
     
     public boolean increasePerimeterNumbers() {
-        for (Cell neighbor: this.perimeter.clearNulls()) {
-            if (!neighbor.isMine()) {
-                if (!neighbor.increaseNumber())
-                    return false;
-            }
-        }
-        return true;
+        return this.perimeter.clearNulls().stream().filter(neighbor -> (!neighbor.isMine())).noneMatch(neighbor -> (!neighbor.increaseNumber()));
     }
     
     /**
@@ -202,10 +191,7 @@ public class Cell extends JButton{
         
         Perimeter<Cell> sub = this.perimeter.clearNulls();
         
-        for (Cell neighbor: sub) {
-            if (neighbor.isMine())
-                mines++;
-        }
+        mines = sub.stream().filter(neighbor -> (neighbor.isMine())).map(_item -> 1).reduce(mines, Integer::sum);
         if (!isMine() && mines != 0) {
             this.setIcon(new ImageIcon(ClassLoader.getSystemResource("resources/"+ String.valueOf(mines)+"raw75.png")));
         } else if (isMine()) {
@@ -221,14 +207,12 @@ public class Cell extends JButton{
      * a mesma seja vazia. Este método é acionado automaticamente pela célula.
      */
     private void revealBlanksNumbers() {
-        for (Cell neighbor: perimeter.clearNulls()) {
-            // Antes de tudo, verificamos se não estamos referenciando a 
+        perimeter.clearNulls().stream().filter(neighbor -> (neighbor.getMark() == Marks.COVERED && !neighbor.isMine())).forEachOrdered(neighbor -> {
+            // Antes de tudo, verificamos se não estamos referenciando a
             // vizinha que nos contatou. Para isso, usamos a mark UNCOVERED,
             // como indicação.
-            if (neighbor.getMark() == Marks.COVERED && !neighbor.isMine()) {
-                neighbor.reveal();
-            }
-        }
+            neighbor.reveal();
+        }); 
     }
     
     /**
@@ -318,9 +302,8 @@ public class Cell extends JButton{
     
     public boolean revealPerimeter() {
         if (number == perimeter.countFlagged()) {
-            for (Cell neighbor: this.perimeter.clearNulls()) {
-                if (!neighbor.reveal())
-                    return false;
+            if (!this.perimeter.clearNulls().stream().noneMatch(neighbor -> (!neighbor.reveal()))) {
+                return false;
             }
         }
         return true;
@@ -374,6 +357,15 @@ public class Cell extends JButton{
         public int countFlagged() {
             final IntCounter counter = new IntCounter();
             this.clearNulls().stream().filter(cell -> (cell.isFlagMarked())).
+                    forEachOrdered(cell -> {
+                        counter.step();
+                    });
+            return counter.total();
+        }
+        
+        public int countMarkedBy(Marks mark) {
+            final IntCounter counter = new IntCounter();
+            this.clearNulls().stream().filter(cell -> (cell.getMark().equals(mark))).
                     forEachOrdered(cell -> {
                         counter.step();
                     });
