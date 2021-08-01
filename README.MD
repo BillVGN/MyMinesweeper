@@ -2,7 +2,7 @@
 
 Uma nova pegada no famosíssimo jogo de lógica do Windows 95, Campo Minado.
 
-![Jogo MyMinesweeper](https://github.com/BillVGN/MyMinesweeper/tree/master/src/resources/MyMinesweeper.png)
+![Jogo MyMinesweeper](https://raw.githubusercontent.com/BillVGN/MyMinesweeper/master/src/resources/MyMinesweeper.png)
 
 ### Algumas escolhas quanto a lógica...
 
@@ -24,7 +24,7 @@ sabendo do que acontece ao redor de si mesma, possa dar dicas e até mesmo ajuda
 quando acontecem os temíveis travamentos onde a lógica permite mais de uma possível alternativa, como a
 figura a seguir demonstra.
 
-![Travamento Lógico](https://github.com/BillVGN/MyMinesweeper/tree/master/src/resources/exemplo-travamento-logico.png)
+![Travamento Lógico](https://raw.githubusercontent.com/BillVGN/MyMinesweeper/master/src/resources/exemplo-travamento-logico.png)
 
 Atualmente, o jogo ainda encontra-se em fase pré-alpha. Muito bugs podem (e devem) aparecer. O código 
 ainda está mal formatado, mas funcional. Não existe vitória per se, mas já é possível jogar e desvendar 
