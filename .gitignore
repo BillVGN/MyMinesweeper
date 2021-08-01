@@ -5,3 +5,8 @@
 /nbproject/
 /test/
 /nbbuild.xml
+/build/
+/dist/
+/lib/
+build.xml
+manifest.mf
