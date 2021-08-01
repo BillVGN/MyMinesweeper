@@ -10,11 +10,8 @@ No MyMinesweeper, cada célula é autoconsciente. Elas são todas interligadas, 
 oito outras células, formando o que chamo de perímetro. Algumas possuirão menor número de conexões devido
 a sua posição no topo ou fundo do campo, assim como nas laterais.
 
-Superior Esquerda | Superior | Superior Direita
------------------   --------   ----------------
-     Esquerda     | Célula   |     Direita
------------------   --------   ----------------
-Inferior Esquerda | Inferior | Inferior Direita
+### O Perímetro
+![O Perímetro](https://raw.githubusercontent.com/BillVGN/MyMinesweeper/master/src/resources/perimetro.png)
 
 Com essa disposição, toda a lógica percorre as células e seus perímetros diretamente, sem necessidade
 de uma representação do campo em separado.
@@ -26,7 +23,7 @@ figura a seguir demonstra.
 
 ![Travamento Lógico](https://raw.githubusercontent.com/BillVGN/MyMinesweeper/master/src/resources/exemplo-travamento-logico.png)
 
-Atualmente, o jogo ainda encontra-se em fase pré-alpha. Muito bugs podem (e devem) aparecer. O código 
+Atualmente, o jogo ainda encontra-se em fase pré-alpha. Muitos bugs podem (e devem) aparecer. O código 
 ainda está mal formatado, mas funcional. Não existe vitória per se, mas já é possível jogar e desvendar 
 o campo inteiro.
 
