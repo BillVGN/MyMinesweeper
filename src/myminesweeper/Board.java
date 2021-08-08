@@ -7,42 +7,43 @@ package myminesweeper;
 
 import java.awt.Dimension;
 import java.awt.Point;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
-import java.util.BitSet;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.stream.Stream;
 import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 import javax.swing.border.BevelBorder;
-import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.apache.commons.lang3.time.StopWatch;
 import org.netbeans.lib.awtextra.AbsoluteConstraints;
 
 /**
  *
  * @author willi
  */
-public class Board extends javax.swing.JFrame implements ActionListener {
+public class Board extends javax.swing.JFrame {
 
     public final int N_ROWS = 30;
     public final int N_COLS = 16;
     public final int CELL_SIZE = 25;
     
-    public final int MINES_QTY = 99;
+    private final String MENSAGEM_MINAS = "Minas Restantes: ";
+    private final int MINES_QTY = 150;
     private int remainingMines;
     
-    private Cell[][] board;
+    private final String MENSAGEM_COINS = "GoldCoins: ";
+    private final int POINT_COST = 3;
+    private int successfulGuesses = 0;
+    private int goldCoins = 0;
+    
+    private final StopTimer relogio;
+    private BoardMap boardMap;
     
     private boolean gameOver;
     private boolean gameStarted;
     private boolean primeiroClique;
-    
-    private final StopWatch temporizador;
-    private final Timer disparador;
     
     /**
      * Creates new form Board
@@ -53,11 +54,27 @@ public class Board extends javax.swing.JFrame implements ActionListener {
         this.gameOver = true;
         this.gameStarted = false;
         this.primeiroClique = true;
-        this.temporizador = new StopWatch();
-        this.disparador = new Timer(1000, this);
-        this.disparador.start();
+        relogio = new StopTimer(this.jlabTempo);
     }
 
+    public void addSuccesfulGuess(int val) {
+        if (successfulGuesses + val == 10) {
+            addGoldCoins(1);
+            successfulGuesses = 0;
+        } else {
+            successfulGuesses += val;
+        }
+    }
+    
+    public void addGoldCoins(int val) {
+        goldCoins += val;
+        showGoldCoins();
+    }
+    
+    private void showGoldCoins() {
+        jlabGoldCoins.setText(MENSAGEM_COINS + String.valueOf(goldCoins));
+    }
+    
     public void setRemainingMines(boolean reduce) {
         if (reduce)
             jlabMinas.setText(jlabMinas.getName() + String.valueOf(--remainingMines));
@@ -68,12 +85,20 @@ public class Board extends javax.swing.JFrame implements ActionListener {
     public void setGameOver(boolean val) {
         this.gameOver = val;
         if (val) {
-            temporizador.stop();
+            relogio.parar();
         }
     }
     
     public boolean isGameOn() {
-        return !this.gameOver;
+        return !this.gameOver && this.gameStarted;
+    }
+    
+    public boolean isGameOver() {
+        return this.gameOver;
+    }
+    
+    public boolean hasGameStarted() {
+        return this.gameStarted;
     }
     
     public boolean isFirstClick() {
@@ -82,6 +107,10 @@ public class Board extends javax.swing.JFrame implements ActionListener {
     
     public void setFirstClick(boolean val) {
         this.primeiroClique = val;
+    }
+    
+    public void setGameStarted(boolean val) {
+        this.gameStarted = val;
     }
     
     /**
@@ -97,6 +126,7 @@ public class Board extends javax.swing.JFrame implements ActionListener {
         jpanMineField = new javax.swing.JPanel();
         jpanStatusBar = new javax.swing.JPanel();
         jlabMinas = new javax.swing.JLabel();
+        jlabGoldCoins = new javax.swing.JLabel();
         jlabTempo = new javax.swing.JLabel();
         jmnbMenu = new javax.swing.JMenuBar();
         jmnJogo = new javax.swing.JMenu();
@@ -118,13 +148,20 @@ public class Board extends javax.swing.JFrame implements ActionListener {
         jpanStatusBar.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.LOWERED));
         jpanStatusBar.setMinimumSize(new java.awt.Dimension(700, 30));
         jpanStatusBar.setPreferredSize(new java.awt.Dimension(777, 30));
-        jpanStatusBar.setLayout(new java.awt.GridLayout(1, 2, 5, 0));
+        jpanStatusBar.setLayout(new java.awt.GridLayout(1, 3, 5, 0));
 
         jlabMinas.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jlabMinas.setText("Minas Restantes: 0");
         jlabMinas.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
         jlabMinas.setName("Minas Restantes: "); // NOI18N
         jpanStatusBar.add(jlabMinas);
+
+        jlabGoldCoins.setBackground(new java.awt.Color(153, 153, 153));
+        jlabGoldCoins.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jlabGoldCoins.setForeground(new java.awt.Color(255, 153, 51));
+        jlabGoldCoins.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jlabGoldCoins.setText("GoldCoins: 0");
+        jpanStatusBar.add(jlabGoldCoins);
 
         jlabTempo.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
         jlabTempo.setText("Tempo Transcorrido: 0:00");
@@ -181,98 +218,94 @@ public class Board extends javax.swing.JFrame implements ActionListener {
     }//GEN-LAST:event_jmniSairActionPerformed
 
     private void jmniNovoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jmniNovoActionPerformed
-        if (this.gameStarted) {
-            clearBoard();
-            setFirstClick(true);
-        }
-        iniciarJogo();
-        this.temporizador.reset();
-        this.jlabTempo.setText(jlabTempo.getName() + "0:00");
-        restartMines();
-        this.jlabMinas.setText(jlabMinas.getName() + String.valueOf(MINES_QTY));
+        novoJogo();
     }//GEN-LAST:event_jmniNovoActionPerformed
 
-    private void initBoard(int nRows, int nCols) throws Exception {
+    private void novoJogo() {
+        if (hasGameStarted()) {
+            clearBoard();
+            setFirstClick(true);
+            setGameStarted(false);
+            restartGoldCoins();
+        }
+        iniciarJogo();
+        relogio.reiniciar();
+        restartMines();
+    }
+    
+    private void initBoard() throws Exception {
 
-        // Vamos inverter a criação e manuseio da board
-        this.board = new Cell[N_ROWS][N_COLS];
+        // Criação do BoardMap
+        this.boardMap = new BoardMap();
+        Cell cell;
         for (int i = 0; i < N_ROWS; i++) {
             for (int j = 0; j < N_COLS; j++) {
-                this.board[i][j] = new Cell(new Point(i, j));
-                this.board[i][j].setMyBoard(this);
+                cell = new Cell(new Point(i, j));
+                cell.setMyBoard(this);
+                this.boardMap.put(cell.getPosition(), cell);
             }
         }
         
-        
-        // Conectando as células entre si
-        ArrayList<Cell> perimeter = new ArrayList<>(8);
-        BitSet checkList = new BitSet(8);
-        for (int i = 0; i < nRows; i++) {
-            for (int j = 0; j < nCols; j++) {
-                // Encostada na esquerda
-                if (i == 0) {
-                    checkList.set(0, true);
-                    checkList.set(6, true);
-                    checkList.set(7, true);
+        // BoardMap
+        // Conectando as células entre si pelo perímetro
+        Point point = new Point();
+        this.boardMap.forEach((p, c) -> {
+            // Superior Esquerda
+            point.setLocation(p.x -1, p.y - 1);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Superior
+            point.setLocation(p.x, p.y - 1);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Superior Direita
+            point.setLocation(p.x + 1, p.y - 1);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Direita
+            point.setLocation(p.x + 1, p.y);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Inferior Direita
+            point.setLocation(p.x + 1, p.y + 1);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Inferior
+            point.setLocation(p.x, p.y + 1);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Inferior Esquerda
+            point.setLocation(p.x - 1, p.y + 1);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+            // Esquerda
+            point.setLocation(p.x - 1, p.y);
+            if (boardMap.containsKey(point)) {
+                c.getPerimeter().add(boardMap.get(point));
+            }
+        });
+    }
+    
+    private void checkBoard() {
+        // First, check if all mines were flagmarked successfully.
+        if (isGameOn()) {
+            if (boardMap.areAllMinesFlagged()) {
+                setGameOver(true);
+                boardMap.flagRemainingCells();
+                boardMap.revealAllCells();
+                if (showConfirmationMessage("Parabéns, você encontrou todas as minas!", null)) {
+                    novoJogo();
                 }
-                
-                // Encostada na direita
-                if (i == nRows - 1) {
-                    checkList.set(2, true);
-                    checkList.set(3, true);
-                    checkList.set(4, true);
-                }
-                
-                // Encostada no Topo
-                if (j == 0) {
-                    checkList.set(0, true);
-                    checkList.set(1, true);
-                    checkList.set(2, true);
-                }
-                
-                // Encostada no fundo
-                if (j == nCols - 1) {
-                    checkList.set(4, true);
-                    checkList.set(5, true);
-                    checkList.set(6, true);
-                }
-                
-                // Itera pelo perimeter para preencher de acordo com a checkList
-                Cell aux;
-                for (int y = 0; y < 8; y++) {
-                    switch (y) {
-                        case 0: aux = (!checkList.get(y))? this.board[i - 1][j - 1] : null ; // upperLeft
-                            break;
-                        case 1: aux = (!checkList.get(y))? this.board[i][j - 1] : null ; // upper
-                            break;
-                        case 2: aux = (!checkList.get(y))? this.board[i + 1][j - 1] : null ; // upperRight
-                            break;
-                        case 3: aux = (!checkList.get(y))? this.board[i + 1][j] : null ; // right
-                            break;
-                        case 4: aux = (!checkList.get(y))? this.board[i + 1][j + 1] : null ; // downRight
-                            break;
-                        case 5: aux = (!checkList.get(y))? this.board[i][j + 1] : null ; // down
-                            break;
-                        case 6: aux = (!checkList.get(y))? this.board[i - 1][j + 1] : null ; // downLeft
-                            break;
-                        case 7: aux = (!checkList.get(y))? this.board[i - 1][j] : null ; // left
-                            break;
-                        default: aux = null; break;
-                    }
-                    perimeter.add(y, aux);
-                }
-                
-                // Passa o perimeter para a Cell em questão
-                if (!this.board[i][j].setPerimeter(perimeter))
-                    throw new Exception("Erro ao inicializar célula(" + String.valueOf(i) + "," + String.valueOf(j) + ")");
-                
-                // Esvazia o perimeter e reinicia a checkList
-                perimeter.clear();
-                checkList.clear();
             }
         }
     }
-    
     
     /**
      * @param args the command line arguments
@@ -305,6 +338,7 @@ public class Board extends javax.swing.JFrame implements ActionListener {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButton4;
+    private javax.swing.JLabel jlabGoldCoins;
     private javax.swing.JLabel jlabMinas;
     private javax.swing.JLabel jlabTempo;
     private javax.swing.JMenu jmnJogo;
@@ -317,21 +351,19 @@ public class Board extends javax.swing.JFrame implements ActionListener {
     // End of variables declaration//GEN-END:variables
 
     private void iniciarJogo() {
-        this.gameOver = false;
-        this.gameStarted = true;
+        setGameOver(false);
         try {
-            initBoard(N_ROWS, N_COLS);        
+            initBoard();        
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, e.getLocalizedMessage());
         }
         
-        for (int i = 0; i < N_ROWS; i++) {
-            for (int j = 0; j < N_COLS; j++) {
-                setInitialCellAtributes(this.board[i][j]);
-                jpanMineField.add(this.board[i][j], new AbsoluteConstraints(i * CELL_SIZE + 5, j * CELL_SIZE + 5, -1, -1));
-                this.board[i][j].setVisible(true);
-            }
-        }
+        // Através da BoardMap
+        this.boardMap.forEach((p, c) -> {
+            setInitialCellAtributes(c);
+            jpanMineField.add(c, new AbsoluteConstraints(p.x * CELL_SIZE + 5, p.y * CELL_SIZE + 5, -1, -1));
+            c.setVisible(true);
+        });
         
         this.revalidate();
     }
@@ -349,91 +381,161 @@ public class Board extends javax.swing.JFrame implements ActionListener {
     }
     
     public void showAllMines() {
-        for (int i = 0; i < N_ROWS; i++) {
-            for (int j = 0; j < N_COLS; j++) {
-                this.board[i][j].showMine();
-            }
+        boardMap.showAllMines();
+        if (showConfirmationMessage("Você disparou uma mina! Que pena!", null)) {
+            novoJogo();
         }
     }
 
     private void loadMines(int hPos, int vPos) {
-        ArrayList<Point> perimetro = new ArrayList<>();
-        perimetro.add(new Point(hPos - 1, vPos - 1)); // upperLeft
-        perimetro.add(new Point(hPos    , vPos - 1)); // Top
-        perimetro.add(new Point(hPos + 1, vPos - 1)); // upperRight
-        perimetro.add(new Point(hPos + 1, vPos    )); // Right
-        perimetro.add(new Point(hPos + 1, vPos + 1)); // downRight
-        perimetro.add(new Point(hPos    , vPos + 1)); // Bottom
-        perimetro.add(new Point(hPos - 1, vPos + 1)); // downLeft
-        perimetro.add(new Point(hPos - 1, vPos    )); // Left
-        perimetro.add(new Point(hPos    , vPos    )); // Self
-        perimetro.stream().filter(p -> (p.getX() < 0 || p.getX() > (N_ROWS - 1) || p.getY() < 0 || p.getY() > (N_COLS - 1))).forEachOrdered(p -> {
-            perimetro.remove(p);
-        });
-        
         // Colocando as minas, sempre testando que todas tenham sua célula
         int minesLeft = MINES_QTY, i, j;
         Point aux = new Point();
+        ArrayList<Point> positions = boardMap.get(new Point(hPos, vPos)).getPerimeter().getPerimeterPositions();
+        positions.add(new Point(hPos, vPos)); // adding cell's own position
         for (; minesLeft > 0;) {
             do {
                 i = (int) (Math.random() * (N_ROWS));
                 j = (int) (Math.random() * (N_COLS));
                 aux.setLocation(i, j);
-            } while (perimetro.contains(aux));
-            if (!this.board[i][j].isMine()) {
-                this.board[i][j].setMine();
-                this.board[i][j].increasePerimeterNumbers();
+            } while (positions.contains(aux));
+            // Por BoardMap
+            if (!boardMap.get(aux).isMine()) {
+                boardMap.get(aux).setMine();
+                boardMap.get(aux).increasePerimeterNumbers();
                 minesLeft--;
             }
         }
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (this.temporizador.isStarted()) {
-            this.jlabTempo.setText(this.jlabTempo.getName() + DurationFormatUtils.formatDuration(temporizador.getTime(), "m:ss", true));
-        }
-    }
-
     private void restartMines() {
         remainingMines = MINES_QTY;
+//        jlabMinas.setText(MENSAGEM_MINAS + String.valueOf(MINES_QTY));
+        jlabMinas.setText(MENSAGEM_MINAS + MINES_QTY);
     }
-    
+
+    private boolean showConfirmationMessage(String title, String message) {
+        return (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(
+                this, 
+                (message == null) ? "Deseja iniciar nova partida?" : message, 
+                title, 
+                JOptionPane.YES_NO_OPTION, 
+                JOptionPane.QUESTION_MESSAGE));
+    }
+
+    private void restartGoldCoins() {
+        goldCoins = 0;
+        successfulGuesses = 0;
+        showGoldCoins();
+    }
+
     protected class CellAdapter extends MouseAdapter  {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            
-            if (isGameOn()) {
+            if (!isGameOver()) {
                 Cell cell = (Cell) e.getSource();
                 // Se foi apenas o esquerdo
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     if (isFirstClick()) {
                         loadMines(cell.getHPos(), cell.getVPos());
-                        temporizador.start();
+                        relogio.iniciar();
                         setFirstClick(false);
+                        setGameStarted(true);
                     }
                     if (!cell.reveal()){
                         setGameOver(true);
-                        showAllMines();
                         setFirstClick(true);
+                        showAllMines();
                     }
+                    checkBoard();
                 } // Se foi apenas o direito
                 else if (SwingUtilities.isRightMouseButton(e)) {
                     Cell.Marks lastMark = cell.toggleMark();
-                    if (lastMark == Cell.Marks.COVERED && cell.isFlagMarked())
+                    
+                    if (cell.isUncovered() && cell.isNumbered()) {
+                        if (goldCoins >= POINT_COST && showConfirmationMessage("Você usará " + String.valueOf(POINT_COST) + " gold coins" , "Quer marcar uma bomba?")) {
+                            cell.pointMine();
+                            setRemainingMines(true);
+                            addGoldCoins(-POINT_COST);
+                        }
+                    } 
+                    if (!cell.isUncovered() && lastMark == Cell.Marks.COVERED && cell.isFlagMarked()) {
                         setRemainingMines(true);
-                    else if (lastMark == Cell.Marks.MINEFLAG)
+                        if (cell.isMine()) 
+                            addSuccesfulGuess(1);
+                    }
+                    else if (!cell.isUncovered() && lastMark == Cell.Marks.MINEFLAG) {
                         setRemainingMines(false);
+                        if (cell.isMine()) 
+                            addSuccesfulGuess(-1);
+                    }
+                    checkBoard();
                 } // Se for o do meio
                 else if (SwingUtilities.isMiddleMouseButton(e)) {
-                    if (!cell.revealPerimeter()) {
-                        setGameOver(true);
-                        showAllMines();
-                        setFirstClick(true);
+                    if (cell.isUncovered() && cell.isNumbered()) {
+                        if (!cell.revealPerimeter()) {
+                            setGameOver(true);
+                            setFirstClick(true);
+                            showAllMines();
+                        }
+
+                        checkBoard();
                     }
                 }
             }
         }
+    }
+    
+    protected class BoardMap extends HashMap<Point, Cell>{
+        
+        /**
+         * Filter all cells with mines than check if every each one of them
+         * is flag marked.
+         * @return true if all of them are. false otherwise.
+         */
+        public boolean areAllMinesFlagged() {
+            Iterator<Cell> cells = values().stream().filter(c -> c.isMine()).iterator();
+            Cell minedCell;
+            
+            while(cells.hasNext()) {
+                minedCell = cells.next();
+                if (!minedCell.isFlagMarked()) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
+        public void showAllMines() {
+            values().stream().filter(c -> c.isMine() || c.isFlagMarked()).forEach(c -> {
+                c.showMine();
+            });
+        }
+        
+        public void revealAllCells() {
+            values().stream().filter(c -> !c.isMine() && !c.isUncovered()).forEach(c -> {
+                c.reveal();
+            });
+        }
+        
+        public void flagRemainingCells() {
+            Stream<Cell> covered = values().stream().filter(c -> c.isCovered());
+            if (covered.count() == remainingMines) {
+                covered.forEach(c -> c.toggleMark());
+            }
+        }
+        
+//        public void flagObviousCells() {
+//            // Primeiro, separam-se as celulas numeradas e descobertas
+//            values().stream().filter(c -> c.isNumbered() && c.isUncovered()).forEach(c -> {
+//                // Se a contagem de celulas cobertas do perímetro é igual ao número da célula
+//                if (c.getPerimeter().stream().filter(neighbor -> neighbor.getMark().equals(Cell.Marks.COVERED)).count() == c.getNumber()) {
+//                    // Aciona todas as células do perímetro
+//                    c.getPerimeter().forEach(neighbor -> neighbor.toggleMark());
+//                }
+//            });
+//        }
     }
 }

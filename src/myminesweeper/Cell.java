@@ -7,6 +7,7 @@ package myminesweeper;
 
 import java.awt.Point;
 import java.util.ArrayList;
+import java.util.List;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 
@@ -81,7 +82,7 @@ public class Cell extends JButton{
     
     // Constructors
     public Cell() {
-        this.perimeter = new Perimeter<>(8);
+        this.perimeter = new Perimeter<>();
         this.mine = false;
         this.position = new Point(0,0);
         this.number = 0;
@@ -89,7 +90,7 @@ public class Cell extends JButton{
     }
 
     public Cell(Point p) {
-        this.perimeter = new Perimeter<>(8);
+        this.perimeter = new Perimeter<>();
         this.mine = false;
         this.position = p;
         this.number = 0;
@@ -111,6 +112,18 @@ public class Cell extends JButton{
      */
     public boolean isEmpty() {
         return (this.number == 0);
+    }
+    
+    public boolean isUncovered() {
+        return (this.mark.equals(Marks.UNCOVERED));
+    }
+    
+    public boolean isCovered() {
+        return (this.mark.equals(Marks.COVERED));
+    }
+    
+    public boolean isNumbered() {
+        return (this.number > 0);
     }
     
     public boolean isMine() {
@@ -155,6 +168,10 @@ public class Cell extends JButton{
             return false;
     }
     
+    public Perimeter<Cell> getPerimeter() {
+        return this.perimeter;
+    }
+    
     public boolean setPerimeter(ArrayList<Cell> perim) {
         return this.perimeter.addAll(perim);
     }
@@ -168,22 +185,10 @@ public class Cell extends JButton{
     }
     
     /**
-     * @param p : Ponto inicialmente configurado em (0,0), que será acrescido
-     * recursivamente.
-     * @return Retorna o ponto calculado de acordo com as celulas vizinhas
+     * @return Retorna o ponto configurado.
      */
-    public Point getCellPosition(Point p) {
-        if (this.perimeter.get(1) != null) {
-            p.setLocation(p.getX(), p.getY() + 1);
-            return this.perimeter.get(1).getCellPosition(p);
-        } else {
-            if (this.perimeter.get(7) != null) {
-                p.setLocation(p.getX() + 1, p.getY());
-                return this.perimeter.get(7).getCellPosition(p);
-            } else {
-                return p;
-            }
-        }
+    public Point getPosition() {
+        return this.position;
     }
     
     public int getHowManyMinesAround() {
@@ -300,6 +305,14 @@ public class Cell extends JButton{
         }
     }
     
+    public void pointMine() {
+        List<Cell> unflagged = perimeter.getUnflaggedMines();
+        int flagged = perimeter.countFlagged();
+        if (number - flagged > 0) {
+            unflagged.get(0).toggleMark();
+        }
+    }
+    
     public boolean revealPerimeter() {
         if (number == perimeter.countFlagged()) {
             if (!this.perimeter.clearNulls().stream().noneMatch(neighbor -> (!neighbor.reveal()))) {
@@ -345,6 +358,14 @@ public class Cell extends JButton{
             return subPerim;
         }
         
+        public ArrayList<Point> getPerimeterPositions() {
+            ArrayList positions = new ArrayList<Point>();
+            this.clearNulls().stream().forEachOrdered(neighbor -> {
+                        positions.add(neighbor.getPosition());
+                    });
+            return positions;
+        }
+        
         public Perimeter<Cell> getBlanks() {
             Perimeter blanks = new Perimeter<>();
             this.clearNulls().stream().filter(blank -> (blank.getNumber() == 0)).
@@ -370,6 +391,10 @@ public class Cell extends JButton{
                         counter.step();
                     });
             return counter.total();
+        }
+        
+        public List<Cell> getUnflaggedMines() {
+            return this.clearNulls().stream().filter(neighbor -> neighbor.isMine() && !neighbor.isFlagMarked()).toList();
         }
     }
     
