@@ -12,6 +12,7 @@ import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.ResourceBundle;
 import java.util.stream.Stream;
 import javax.swing.BorderFactory;
 import javax.swing.JOptionPane;
@@ -25,22 +26,31 @@ import org.netbeans.lib.awtextra.AbsoluteConstraints;
  */
 public class Board extends javax.swing.JFrame {
 
-    public final int N_ROWS = 30;
-    public final int N_COLS = 16;
-    public final int CELL_SIZE = 25;
+    // Internationalization
+    private static final ResourceBundle languages = ResourceBundle.getBundle("resources/languages");
     
-    private final String MENSAGEM_MINAS = "Minas Restantes: ";
-    private final int MINES_QTY = 150;
+    // Preferences
+    private final Configuration configForm;
+    private int _minesQty;
+    private int _nRows;
+    private int _nCols;
+    private int _cellSize;
+    private int _pointCost;
+    
+    // Mines
+    private final String MENSAGEM_MINAS = languages.getString("REMAINING");
     private int remainingMines;
     
-    private final String MENSAGEM_COINS = "GoldCoins: ";
-    private final int POINT_COST = 3;
+    // Gold Coins
+    private final String MENSAGEM_COINS = languages.getString("GOLD_COINS");
     private int successfulGuesses = 0;
     private int goldCoins = 0;
     
+    // Clock
     private final StopTimer relogio;
-    private BoardMap boardMap;
     
+    // BoardMap
+    private BoardMap boardMap;
     private boolean gameOver;
     private boolean gameStarted;
     private boolean primeiroClique;
@@ -50,13 +60,29 @@ public class Board extends javax.swing.JFrame {
      */
     public Board() {
         initComponents();
-        this.remainingMines = MINES_QTY;
+        configForm = new Configuration(this, true);
+        initPreferences();
+        this.remainingMines = _minesQty;
         this.gameOver = true;
         this.gameStarted = false;
         this.primeiroClique = true;
         relogio = new StopTimer(this.jlabTempo);
     }
 
+    /**
+     * @return the _pointCost
+     */
+    public int getPointCost() {
+        return _pointCost;
+    }
+
+    /**
+     * @param pointCost the _pointCost to set
+     */
+    public void setPointCost(int pointCost) {
+        _pointCost = pointCost;
+    }
+    
     public void addSuccesfulGuess(int val) {
         if (successfulGuesses + val == 10) {
             addGoldCoins(1);
@@ -122,7 +148,6 @@ public class Board extends javax.swing.JFrame {
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
 
-        jButton4 = new javax.swing.JButton();
         jpanMineField = new javax.swing.JPanel();
         jpanStatusBar = new javax.swing.JPanel();
         jlabMinas = new javax.swing.JLabel();
@@ -131,17 +156,16 @@ public class Board extends javax.swing.JFrame {
         jmnbMenu = new javax.swing.JMenuBar();
         jmnJogo = new javax.swing.JMenu();
         jmniNovo = new javax.swing.JMenuItem();
+        jMenuItem1 = new javax.swing.JMenuItem();
         jsSeparador1 = new javax.swing.JPopupMenu.Separator();
         jmniSair = new javax.swing.JMenuItem();
-
-        jButton4.setText("jButton4");
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setMinimumSize(new java.awt.Dimension(777, 470));
         setName("Board"); // NOI18N
-        setPreferredSize(new java.awt.Dimension(777, 500));
         setSize(new java.awt.Dimension(777, 500));
 
+        jpanMineField.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jpanMineField.setMinimumSize(new java.awt.Dimension(777, 408));
         jpanMineField.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
@@ -151,7 +175,7 @@ public class Board extends javax.swing.JFrame {
         jpanStatusBar.setLayout(new java.awt.GridLayout(1, 3, 5, 0));
 
         jlabMinas.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jlabMinas.setText("Minas Restantes: 0");
+        jlabMinas.setText(languages.getString("REMAINING_START")); // NOI18N
         jlabMinas.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
         jlabMinas.setName("Minas Restantes: "); // NOI18N
         jpanStatusBar.add(jlabMinas);
@@ -160,27 +184,35 @@ public class Board extends javax.swing.JFrame {
         jlabGoldCoins.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         jlabGoldCoins.setForeground(new java.awt.Color(255, 153, 51));
         jlabGoldCoins.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
-        jlabGoldCoins.setText("GoldCoins: 0");
+        jlabGoldCoins.setText(languages.getString("GOLD_COINS_START")); // NOI18N
         jpanStatusBar.add(jlabGoldCoins);
 
         jlabTempo.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlabTempo.setText("Tempo Transcorrido: 0:00");
+        jlabTempo.setText(languages.getString("TIME_ELAPSED_START")); // NOI18N
         jlabTempo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 20));
         jlabTempo.setName("Tempo Transcorrido: "); // NOI18N
         jpanStatusBar.add(jlabTempo);
 
-        jmnJogo.setText("Jogo");
+        jmnJogo.setText(languages.getString("GAME")); // NOI18N
 
-        jmniNovo.setText("Novo");
+        jmniNovo.setText(languages.getString("NEW")); // NOI18N
         jmniNovo.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jmniNovoActionPerformed(evt);
             }
         });
         jmnJogo.add(jmniNovo);
+
+        jMenuItem1.setText(languages.getString("CONFIGURATION")); // NOI18N
+        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItem1ActionPerformed(evt);
+            }
+        });
+        jmnJogo.add(jMenuItem1);
         jmnJogo.add(jsSeparador1);
 
-        jmniSair.setText("Sair");
+        jmniSair.setText(languages.getString("EXIT")); // NOI18N
         jmniSair.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jmniSairActionPerformed(evt);
@@ -196,17 +228,27 @@ public class Board extends javax.swing.JFrame {
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-            .addComponent(jpanMineField, javax.swing.GroupLayout.PREFERRED_SIZE, 777, javax.swing.GroupLayout.PREFERRED_SIZE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(jpanMineField, javax.swing.GroupLayout.PREFERRED_SIZE, 765, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(layout.createSequentialGroup()
+                    .addContainerGap()
+                    .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, 765, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(0, 0, 0)
-                .addComponent(jpanMineField, javax.swing.GroupLayout.PREFERRED_SIZE, 408, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0)
-                .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(0, 0, 0))
+                .addContainerGap()
+                .addComponent(jpanMineField, javax.swing.GroupLayout.PREFERRED_SIZE, 410, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(41, Short.MAX_VALUE))
+            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                    .addContainerGap(421, Short.MAX_VALUE)
+                    .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addContainerGap()))
         );
 
         pack();
@@ -221,9 +263,13 @@ public class Board extends javax.swing.JFrame {
         novoJogo();
     }//GEN-LAST:event_jmniNovoActionPerformed
 
+    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
+        loadConfigForm();
+    }//GEN-LAST:event_jMenuItem1ActionPerformed
+
     private void novoJogo() {
+        clearBoard();
         if (hasGameStarted()) {
-            clearBoard();
             setFirstClick(true);
             setGameStarted(false);
             restartGoldCoins();
@@ -238,8 +284,8 @@ public class Board extends javax.swing.JFrame {
         // Criação do BoardMap
         this.boardMap = new BoardMap();
         Cell cell;
-        for (int i = 0; i < N_ROWS; i++) {
-            for (int j = 0; j < N_COLS; j++) {
+        for (int i = 0; i < getNRows(); i++) {
+            for (int j = 0; j < getNCols(); j++) {
                 cell = new Cell(new Point(i, j));
                 cell.setMyBoard(this);
                 this.boardMap.put(cell.getPosition(), cell);
@@ -300,7 +346,7 @@ public class Board extends javax.swing.JFrame {
                 setGameOver(true);
                 boardMap.flagRemainingCells();
                 boardMap.revealAllCells();
-                if (showConfirmationMessage("Parabéns, você encontrou todas as minas!", null)) {
+                if (showConfirmationMessage(languages.getString("CONGRATULATIONS"), null)) {
                     novoJogo();
                 }
             }
@@ -337,7 +383,7 @@ public class Board extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JButton jButton4;
+    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JLabel jlabGoldCoins;
     private javax.swing.JLabel jlabMinas;
     private javax.swing.JLabel jlabTempo;
@@ -361,7 +407,7 @@ public class Board extends javax.swing.JFrame {
         // Através da BoardMap
         this.boardMap.forEach((p, c) -> {
             setInitialCellAtributes(c);
-            jpanMineField.add(c, new AbsoluteConstraints(p.x * CELL_SIZE + 5, p.y * CELL_SIZE + 5, -1, -1));
+            jpanMineField.add(c, new AbsoluteConstraints(p.x * getCellSize() + 5, p.y * getCellSize() + 5, -1, -1));
             c.setVisible(true);
         });
         
@@ -369,7 +415,7 @@ public class Board extends javax.swing.JFrame {
     }
     
     private void setInitialCellAtributes(Cell cell) {
-        cell.setPreferredSize(new Dimension(CELL_SIZE, CELL_SIZE));
+        cell.setPreferredSize(new Dimension(getCellSize(), getCellSize()));
         cell.setFocusable(false);
         cell.setBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED));
         cell.setFocusable(false);
@@ -378,25 +424,26 @@ public class Board extends javax.swing.JFrame {
 
     private void clearBoard() {
         jpanMineField.removeAll();
+        jpanMineField.updateUI();
     }
     
     public void showAllMines() {
         boardMap.showAllMines();
-        if (showConfirmationMessage("Você disparou uma mina! Que pena!", null)) {
+        if (showConfirmationMessage(languages.getString("MINESTEPPED"), null)) {
             novoJogo();
         }
     }
 
     private void loadMines(int hPos, int vPos) {
         // Colocando as minas, sempre testando que todas tenham sua célula
-        int minesLeft = MINES_QTY, i, j;
+        int minesLeft = _minesQty, i, j;
         Point aux = new Point();
         ArrayList<Point> positions = boardMap.get(new Point(hPos, vPos)).getPerimeter().getPerimeterPositions();
         positions.add(new Point(hPos, vPos)); // adding cell's own position
         for (; minesLeft > 0;) {
             do {
-                i = (int) (Math.random() * (N_ROWS));
-                j = (int) (Math.random() * (N_COLS));
+                i = (int) (Math.random() * (getNRows()));
+                j = (int) (Math.random() * (getNCols()));
                 aux.setLocation(i, j);
             } while (positions.contains(aux));
             // Por BoardMap
@@ -409,15 +456,15 @@ public class Board extends javax.swing.JFrame {
     }
 
     private void restartMines() {
-        remainingMines = MINES_QTY;
-//        jlabMinas.setText(MENSAGEM_MINAS + String.valueOf(MINES_QTY));
-        jlabMinas.setText(MENSAGEM_MINAS + MINES_QTY);
+        remainingMines = _minesQty;
+//        jlabMinas.setText(MENSAGEM_MINAS + String.valueOf(_minesQty));
+        jlabMinas.setText(MENSAGEM_MINAS + _minesQty);
     }
 
     private boolean showConfirmationMessage(String title, String message) {
         return (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(
                 this, 
-                (message == null) ? "Deseja iniciar nova partida?" : message, 
+                (message == null) ? languages.getString("START_NEW") : message, 
                 title, 
                 JOptionPane.YES_NO_OPTION, 
                 JOptionPane.QUESTION_MESSAGE));
@@ -429,50 +476,39 @@ public class Board extends javax.swing.JFrame {
         showGoldCoins();
     }
 
+    private void loadConfigForm() {
+        configForm.setVisible(true);
+    }
+
+    public int getMinesQty() {
+        return _minesQty;
+    }
+
+    public void setMinesQty(int _minesQty) {
+        this._minesQty = _minesQty;
+    }
+
+    private void initPreferences() {
+        _minesQty = configForm.getPreferenceFromIni(Configuration.Prefs.MINES_QTY);
+        _nRows = configForm.getPreferenceFromIni(Configuration.Prefs.N_ROWS);
+        _nCols = configForm.getPreferenceFromIni(Configuration.Prefs.N_COLS);
+        _cellSize = configForm.getPreferenceFromIni(Configuration.Prefs.CELL_SIZE);
+        _pointCost = configForm.getPreferenceFromIni(Configuration.Prefs.POINTS_COST);
+    }
+
     protected class CellAdapter extends MouseAdapter  {
 
         @Override
         public void mousePressed(MouseEvent e) {
+            boolean clickProcessed = false;
             if (!isGameOver()) {
                 Cell cell = (Cell) e.getSource();
-                // Se foi apenas o esquerdo
-                if (SwingUtilities.isLeftMouseButton(e)) {
-                    if (isFirstClick()) {
-                        loadMines(cell.getHPos(), cell.getVPos());
-                        relogio.iniciar();
-                        setFirstClick(false);
-                        setGameStarted(true);
-                    }
-                    if (!cell.reveal()){
-                        setGameOver(true);
-                        setFirstClick(true);
-                        showAllMines();
-                    }
-                    checkBoard();
-                } // Se foi apenas o direito
-                else if (SwingUtilities.isRightMouseButton(e)) {
-                    Cell.Marks lastMark = cell.toggleMark();
-                    
-                    if (cell.isUncovered() && cell.isNumbered()) {
-                        if (goldCoins >= POINT_COST && showConfirmationMessage("Você usará " + String.valueOf(POINT_COST) + " gold coins" , "Quer marcar uma bomba?")) {
-                            cell.pointMine();
-                            setRemainingMines(true);
-                            addGoldCoins(-POINT_COST);
-                        }
-                    } 
-                    if (!cell.isUncovered() && lastMark == Cell.Marks.COVERED && cell.isFlagMarked()) {
-                        setRemainingMines(true);
-                        if (cell.isMine()) 
-                            addSuccesfulGuess(1);
-                    }
-                    else if (!cell.isUncovered() && lastMark == Cell.Marks.MINEFLAG) {
-                        setRemainingMines(false);
-                        if (cell.isMine()) 
-                            addSuccesfulGuess(-1);
-                    }
-                    checkBoard();
-                } // Se for o do meio
-                else if (SwingUtilities.isMiddleMouseButton(e)) {
+                
+                // Revela perímetro
+                // Se forem os dois ao mesmo tempo
+                int bothMask = MouseEvent.BUTTON1_DOWN_MASK | MouseEvent.BUTTON3_DOWN_MASK;
+                if ((e.getModifiersEx() & bothMask) == bothMask || SwingUtilities.isMiddleMouseButton(e)) {
+                    clickProcessed = true;
                     if (cell.isUncovered() && cell.isNumbered()) {
                         if (!cell.revealPerimeter()) {
                             setGameOver(true);
@@ -482,6 +518,62 @@ public class Board extends javax.swing.JFrame {
 
                         checkBoard();
                     }
+                }
+                
+                // Dica do número
+                // Se for o do meio
+                if (SwingUtilities.isMiddleMouseButton(e)) {
+                    // Dica
+                    if (cell.isUncovered() && cell.isNumbered()) {
+                        if (goldCoins >= getPointCost() && 
+                                showConfirmationMessage(java.text.MessageFormat.format(java.util.ResourceBundle.getBundle("resources/languages")
+                                        .getString("COINS_USED"), new Object[] {String.valueOf(getPointCost())}) , languages.getString("SHOW_MINE"))) {
+                            cell.pointMine();
+                            setRemainingMines(true);
+                            addGoldCoins(-getPointCost());
+                        }
+                    }
+                    
+                    checkBoard();
+                }
+
+                // Marcação de célula
+                // Se foi apenas o direito
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    if (!clickProcessed){
+                        clickProcessed = true;
+                        Cell.Marks lastMark = cell.toggleMark();
+                        if (!cell.isUncovered() && lastMark == Cell.Marks.COVERED && cell.isFlagMarked()) {
+                            setRemainingMines(true);
+                            if (cell.isMine()) 
+                                addSuccesfulGuess(1);
+                        }
+                        else if (!cell.isUncovered() && lastMark == Cell.Marks.MINEFLAG) {
+                            setRemainingMines(false);
+                            if (cell.isMine()) 
+                                addSuccesfulGuess(-1);
+                        }
+                        checkBoard();
+                    }
+                } 
+
+                // Revelação de célula
+                // Se foi apenas o esquerdo
+                if (SwingUtilities.isLeftMouseButton(e)) {
+                    if (!clickProcessed) {
+                        if (isFirstClick()) {
+                            loadMines(cell.getHPos(), cell.getVPos());
+                            relogio.iniciar();
+                            setFirstClick(false);
+                            setGameStarted(true);
+                        }
+                        if (!cell.reveal()){
+                            setGameOver(true);
+                            setFirstClick(true);
+                            showAllMines();
+                        }
+                        checkBoard();
+                    } 
                 }
             }
         }
@@ -537,5 +629,47 @@ public class Board extends javax.swing.JFrame {
 //                }
 //            });
 //        }
+    }
+
+    /**
+     * @return the _nRows
+     */
+    public  int getNRows() {
+        return _nRows;
+    }
+
+    /**
+     * @param anRows the _nRows to set
+     */
+    public  void setNRows(int anRows) {
+        _nRows = anRows;
+    }
+
+    /**
+     * @return the _nCols
+     */
+    public  int getNCols() {
+        return _nCols;
+    }
+
+    /**
+     * @param anCols the _nCols to set
+     */
+    public  void setNCols(int anCols) {
+        _nCols = anCols;
+    }
+
+    /**
+     * @return the _cellSize
+     */
+    public  int getCellSize() {
+        return _cellSize;
+    }
+
+    /**
+     * @param aCellSize the _cellSize to set
+     */
+    public  void setCellSize(int aCellSize) {
+        _cellSize = aCellSize;
     }
 }
