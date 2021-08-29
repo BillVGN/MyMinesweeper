@@ -5,11 +5,14 @@
  */
 package myminesweeper;
 
+import java.awt.event.ItemEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.apache.commons.lang3.ArrayUtils;
 import org.ini4j.Wini;
 
 /**
@@ -20,6 +23,15 @@ public class Configuration extends javax.swing.JDialog {
     
     private Wini ini;
     private final String DEF_FILE_NAME = "config.ini";
+    private final String MINES_QTY_CONFIG = "MINE_QTY";
+    private final String N_ROWS_CONFIG = "N_ROWS";
+    private final String N_COLS_CONFIG = "N_COLS";
+    private final String POINTS_COST_CONFIG = "POINTS_COST";
+    private final String CELL_SIZE_CONFIG = "CELL_SIZE";
+    
+    private Prefs[] gameLevels = {Prefs.EASY, Prefs.MODERATE, Prefs.EXPERT};
+    private String[] gameLevelsByLocale;
+    
     private final Board myBoard;
     private static final ResourceBundle languages = ResourceBundle.getBundle("resources/languages");    
     
@@ -37,6 +49,7 @@ public class Configuration extends javax.swing.JDialog {
         } catch (IOException ex) {
             Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
         }
+//        gameLevelsByLocale = Arrays.stream(gameLevels).map(val->val.getString)
     }
 
     /**
@@ -59,10 +72,14 @@ public class Configuration extends javax.swing.JDialog {
         jspinCellSize = new javax.swing.JSpinner();
         jlabPointsCost = new javax.swing.JLabel();
         jspinPointsCost = new javax.swing.JSpinner();
+        jcmbboxGameLevel = new javax.swing.JComboBox<>();
+        jlabGameLevel = new javax.swing.JLabel();
         jbutSave = new javax.swing.JButton();
         jbutCancel = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
+        setTitle(languages.getString("SETTINGS")); // NOI18N
+        setResizable(false);
 
         jpanGame.setBorder(javax.swing.BorderFactory.createTitledBorder(null, languages.getString("GAME"), javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION, javax.swing.border.TitledBorder.TOP)); // NOI18N
 
@@ -86,6 +103,15 @@ public class Configuration extends javax.swing.JDialog {
 
         jspinPointsCost.setModel(new javax.swing.SpinnerNumberModel(3, 1, 10, 1));
 
+        jcmbboxGameLevel.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Personalizado", "Fácil", "Moderado", "Expert" }));
+        jcmbboxGameLevel.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                ValueChanged(evt);
+            }
+        });
+
+        jlabGameLevel.setText(languages.getString("GAME_LEVEL")); // NOI18N
+
         javax.swing.GroupLayout jpanGameLayout = new javax.swing.GroupLayout(jpanGame);
         jpanGame.setLayout(jpanGameLayout);
         jpanGameLayout.setHorizontalGroup(
@@ -93,32 +119,31 @@ public class Configuration extends javax.swing.JDialog {
             .addGroup(jpanGameLayout.createSequentialGroup()
                 .addContainerGap()
                 .addGroup(jpanGameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jpanGameLayout.createSequentialGroup()
-                        .addComponent(jlabCellSize)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jspinCellSize, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jpanGameLayout.createSequentialGroup()
-                        .addComponent(jlabNumberOfRows)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 28, Short.MAX_VALUE)
-                        .addComponent(jspinNumberOfRows, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jpanGameLayout.createSequentialGroup()
-                        .addComponent(jlabMinesQuantity)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jspinMinas, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, jpanGameLayout.createSequentialGroup()
-                        .addComponent(jlabNumberOfCols)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jspinNumberOfCols, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE))
-                    .addGroup(jpanGameLayout.createSequentialGroup()
-                        .addComponent(jlabPointsCost)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addComponent(jspinPointsCost, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                    .addComponent(jlabMinesQuantity)
+                    .addComponent(jlabNumberOfRows)
+                    .addComponent(jlabNumberOfCols)
+                    .addComponent(jlabCellSize)
+                    .addComponent(jlabPointsCost)
+                    .addComponent(jlabGameLevel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 17, Short.MAX_VALUE)
+                .addGroup(jpanGameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(jcmbboxGameLevel, javax.swing.GroupLayout.PREFERRED_SIZE, 133, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addGroup(jpanGameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(jspinCellSize, javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jspinNumberOfCols, javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jspinNumberOfRows, javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jspinMinas, javax.swing.GroupLayout.Alignment.TRAILING)
+                        .addComponent(jspinPointsCost, javax.swing.GroupLayout.Alignment.TRAILING)))
                 .addContainerGap())
         );
         jpanGameLayout.setVerticalGroup(
             jpanGameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(jpanGameLayout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addContainerGap(42, Short.MAX_VALUE)
+                .addGroup(jpanGameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(jcmbboxGameLevel, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(jlabGameLevel))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addGroup(jpanGameLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jlabMinesQuantity)
                     .addComponent(jspinMinas, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -175,12 +200,13 @@ public class Configuration extends javax.swing.JDialog {
                 .addComponent(jpanGame, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jbutSave)
-                    .addComponent(jbutCancel))
+                    .addComponent(jbutCancel)
+                    .addComponent(jbutSave))
                 .addContainerGap())
         );
 
         pack();
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jbutCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jbutCancelActionPerformed
@@ -195,6 +221,12 @@ public class Configuration extends javax.swing.JDialog {
         }
         setVisible(false);
     }//GEN-LAST:event_jbutSaveActionPerformed
+
+    private void ValueChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_ValueChanged
+        if (evt.getStateChange() == ItemEvent.SELECTED && evt.getItem().toString() != "") {
+            
+        }
+    }//GEN-LAST:event_ValueChanged
 
     /**
      * @param args the command line arguments
@@ -235,7 +267,9 @@ public class Configuration extends javax.swing.JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jbutCancel;
     private javax.swing.JButton jbutSave;
+    private javax.swing.JComboBox<String> jcmbboxGameLevel;
     private javax.swing.JLabel jlabCellSize;
+    private javax.swing.JLabel jlabGameLevel;
     private javax.swing.JLabel jlabMinesQuantity;
     private javax.swing.JLabel jlabNumberOfCols;
     private javax.swing.JLabel jlabNumberOfRows;
@@ -250,18 +284,18 @@ public class Configuration extends javax.swing.JDialog {
 
     private void saveAndApplyConfig() throws IOException {
         if (ini instanceof Wini) {
-            ini.put("game", Prefs.MINES_QTY.toString(), jspinMinas.getValue());
-            ini.put("game", Prefs.N_ROWS.toString(), jspinNumberOfRows.getValue());
-            ini.put("game", Prefs.N_COLS.toString(), jspinNumberOfCols.getValue());
-            ini.put("game", Prefs.CELL_SIZE.toString(), jspinCellSize.getValue());
-            ini.put("game", Prefs.POINTS_COST.toString(), jspinPointsCost.getValue());
+            ini.put("game", MINES_QTY_CONFIG, jspinMinas.getValue());
+            ini.put("game", N_ROWS_CONFIG, jspinNumberOfRows.getValue());
+            ini.put("game", N_COLS_CONFIG, jspinNumberOfCols.getValue());
+            ini.put("game", CELL_SIZE_CONFIG, jspinCellSize.getValue());
+            ini.put("game", POINTS_COST_CONFIG, jspinPointsCost.getValue());
             ini.store(new File(DEF_FILE_NAME));
             
-            myBoard.setMinesQty(ini.get("game", Prefs.MINES_QTY.toString(), int.class));
-            myBoard.setNRows(ini.get("game", Prefs.N_ROWS.toString(), int.class));
-            myBoard.setNCols(ini.get("game", Prefs.N_COLS.toString(), int.class));
-            myBoard.setCellSize(ini.get("game", Prefs.CELL_SIZE.toString(), int.class));
-            myBoard.setPointCost(ini.get("game", Prefs.POINTS_COST.toString(), int.class));
+            myBoard.setMinesQty(ini.get("game", MINES_QTY_CONFIG, int.class));
+            myBoard.setNRows(ini.get("game", N_ROWS_CONFIG, int.class));
+            myBoard.setNCols(ini.get("game", N_COLS_CONFIG, int.class));
+            myBoard.setCellSize(ini.get("game", CELL_SIZE_CONFIG, int.class));
+            myBoard.setPointCost(ini.get("game", POINTS_COST_CONFIG, int.class));
         }
     }
     
@@ -275,25 +309,25 @@ public class Configuration extends javax.swing.JDialog {
         } else if (f.exists()) 
             ini = new Wini(f);
             
-        // MINES_QTY
-        jspinMinas.setValue(ini.get("game", Prefs.MINES_QTY.toString(), int.class));
-        // N_ROWS
-        jspinNumberOfRows.setValue(ini.get("game", Prefs.N_ROWS.toString(), int.class));
-        // N_COLS
-        jspinNumberOfCols.setValue(ini.get("game", Prefs.N_COLS.toString(), int.class));
-        // CELL_SIZE
-        jspinCellSize.setValue(ini.get("game", Prefs.CELL_SIZE.toString(), int.class));
-        // POINTS_COST
-        jspinPointsCost.setValue(ini.get("game", Prefs.POINTS_COST.toString(), int.class));
+        // MINES_QTY_EXPERT
+        jspinMinas.setValue(ini.get("game", MINES_QTY_CONFIG, int.class));
+        // N_ROWS_EXPERT
+        jspinNumberOfRows.setValue(ini.get("game", N_ROWS_CONFIG, int.class));
+        // N_COLS_EXPERT
+        jspinNumberOfCols.setValue(ini.get("game", N_COLS_CONFIG, int.class));
+        // CELL_SIZE_DEFAULT
+        jspinCellSize.setValue(ini.get("game", CELL_SIZE_CONFIG, int.class));
+        // POINTS_COST_EXPERT
+        jspinPointsCost.setValue(ini.get("game", POINTS_COST_CONFIG, int.class));
     }
 
     private void startPrefs() throws IOException {
         // Write defaults
-        ini.add("game", Prefs.MINES_QTY.toString(), Prefs.MINES_QTY.getVal());
-        ini.add("game", Prefs.N_ROWS.toString(), Prefs.N_ROWS.getVal());
-        ini.add("game", Prefs.N_COLS.toString(), Prefs.N_COLS.getVal());
-        ini.add("game", Prefs.CELL_SIZE.toString(), Prefs.CELL_SIZE.getVal());
-        ini.add("game", Prefs.POINTS_COST.toString(), Prefs.POINTS_COST.getVal());
+        ini.add("game", MINES_QTY_CONFIG, Prefs.MINES_QTY_EXPERT.getVal());
+        ini.add("game", N_ROWS_CONFIG, Prefs.N_ROWS_EXPERT.getVal());
+        ini.add("game", N_COLS_CONFIG, Prefs.N_COLS_EXPERT.getVal());
+        ini.add("game", CELL_SIZE_CONFIG, Prefs.CELL_SIZE_DEFAULT.getVal());
+        ini.add("game", POINTS_COST_CONFIG, Prefs.POINTS_COST_EXPERT.getVal());
         ini.store(new File(DEF_FILE_NAME));
     }
     
@@ -305,12 +339,38 @@ public class Configuration extends javax.swing.JDialog {
         }
     }
     
+    private void setAllPrefsTo(Prefs gameLevel) {
+        if ( ArrayUtils.contains(new Prefs[]{Prefs.EASY, Prefs.MODERATE, Prefs.EXPERT}, gameLevel)) {
+            // MINES_QTY_EXPERT
+            jspinMinas.setValue(Prefs.valueOf("MINES_QTY_" + gameLevel.toString()));
+            // N_ROWS_EXPERT
+            jspinNumberOfRows.setValue(Prefs.valueOf("N_ROWS_" + gameLevel.toString()));
+            // N_COLS_EXPERT
+            jspinNumberOfCols.setValue(Prefs.valueOf("N_COLS_" + gameLevel.toString()));
+            // CELL_SIZE_DEFAULT
+            jspinCellSize.setValue(Prefs.valueOf("CELL_SIZE_" + gameLevel.toString()));
+            // POINTS_COST_EXPERT
+            jspinPointsCost.setValue(Prefs.valueOf("POINTS_COST_" + gameLevel.toString()));
+        }
+    }
+    
     public static enum Prefs {
-        MINES_QTY(99),
-        N_ROWS(30),
-        N_COLS(16),
-        CELL_SIZE(25), 
-        POINTS_COST(3);
+        EASY(6),
+        MODERATE(66),
+        EXPERT(666),
+        CELL_SIZE_DEFAULT(25), 
+        MINES_QTY_EXPERT(99),
+        N_ROWS_EXPERT(30),
+        N_COLS_EXPERT(16),
+        POINTS_COST_EXPERT(3),
+        MINES_QTY_MODERATE(40),
+        N_ROWS_MODERATE(16),
+        N_COLS_MODERATE(16),
+        POINTS_COST_MODERATE(2),
+        MINES_QTY_EASY(10),
+        N_ROWS_EASY(9),
+        N_COLS_EASY(9),
+        POINTS_COST_EASY(1);
         
         private final int val;
         

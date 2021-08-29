@@ -7,11 +7,14 @@ package myminesweeper;
 
 import java.awt.Dimension;
 import java.awt.Point;
+import java.awt.Window;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.stream.Stream;
 import javax.swing.BorderFactory;
@@ -27,7 +30,7 @@ import org.netbeans.lib.awtextra.AbsoluteConstraints;
 public class Board extends javax.swing.JFrame {
 
     // Internationalization
-    private static final ResourceBundle languages = ResourceBundle.getBundle("resources/languages");
+    private static final ResourceBundle languages = ResourceBundle.getBundle("resources/languages", Locale.forLanguageTag("en-US"));
     
     // Preferences
     private final Configuration configForm;
@@ -39,10 +42,12 @@ public class Board extends javax.swing.JFrame {
     
     // Mines
     private final String MENSAGEM_MINAS = languages.getString("REMAINING");
+    private final String MENSAGEM_MINAS_MINI = languages.getString("REMAINING_MINI");
     private int remainingMines;
     
     // Gold Coins
     private final String MENSAGEM_COINS = languages.getString("GOLD_COINS");
+    private final String MENSAGEM_COINS_MINI = languages.getString("GOLD_COINS_MINI");
     private int successfulGuesses = 0;
     private int goldCoins = 0;
     
@@ -54,6 +59,10 @@ public class Board extends javax.swing.JFrame {
     private boolean gameOver;
     private boolean gameStarted;
     private boolean primeiroClique;
+    
+    // BoardController
+    private final BoardController controlador;
+    private boolean running = false;
     
     /**
      * Creates new form Board
@@ -67,6 +76,7 @@ public class Board extends javax.swing.JFrame {
         this.gameStarted = false;
         this.primeiroClique = true;
         relogio = new StopTimer(this.jlabTempo);
+        this.controlador = new BoardController(this);
     }
 
     /**
@@ -75,6 +85,14 @@ public class Board extends javax.swing.JFrame {
     public int getPointCost() {
         return _pointCost;
     }
+
+     /**
+     * @return the boardMap
+     */
+    public BoardMap getBoardMap() {
+        return boardMap;
+    }
+
 
     /**
      * @param pointCost the _pointCost to set
@@ -161,22 +179,25 @@ public class Board extends javax.swing.JFrame {
         jmniSair = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
-        setMinimumSize(new java.awt.Dimension(777, 470));
+        setMinimumSize(new java.awt.Dimension(260, 290));
         setName("Board"); // NOI18N
-        setSize(new java.awt.Dimension(777, 500));
+        setPreferredSize(new java.awt.Dimension(600, 450));
+        setSize(new java.awt.Dimension(260, 290));
 
         jpanMineField.setBorder(javax.swing.BorderFactory.createEtchedBorder());
-        jpanMineField.setMinimumSize(new java.awt.Dimension(777, 408));
+        jpanMineField.setMinimumSize(new java.awt.Dimension(230, 230));
         jpanMineField.setLayout(new org.netbeans.lib.awtextra.AbsoluteLayout());
 
         jpanStatusBar.setBorder(javax.swing.BorderFactory.createBevelBorder(javax.swing.border.BevelBorder.LOWERED));
-        jpanStatusBar.setMinimumSize(new java.awt.Dimension(700, 30));
+        jpanStatusBar.setFocusable(false);
+        jpanStatusBar.setMinimumSize(new java.awt.Dimension(242, 30));
         jpanStatusBar.setPreferredSize(new java.awt.Dimension(777, 30));
         jpanStatusBar.setLayout(new java.awt.GridLayout(1, 3, 5, 0));
 
         jlabMinas.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
-        jlabMinas.setText(languages.getString("REMAINING_START")); // NOI18N
-        jlabMinas.setBorder(javax.swing.BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        jlabMinas.setText(languages.getString("REMAINING_START_MINI")); // NOI18N
+        jlabMinas.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 5, 0, 0));
+        jlabMinas.setMinimumSize(new java.awt.Dimension(80, 30));
         jlabMinas.setName("Minas Restantes: "); // NOI18N
         jpanStatusBar.add(jlabMinas);
 
@@ -185,11 +206,13 @@ public class Board extends javax.swing.JFrame {
         jlabGoldCoins.setForeground(new java.awt.Color(255, 153, 51));
         jlabGoldCoins.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jlabGoldCoins.setText(languages.getString("GOLD_COINS_START")); // NOI18N
+        jlabGoldCoins.setMinimumSize(new java.awt.Dimension(80, 30));
         jpanStatusBar.add(jlabGoldCoins);
 
-        jlabTempo.setHorizontalAlignment(javax.swing.SwingConstants.TRAILING);
-        jlabTempo.setText(languages.getString("TIME_ELAPSED_START")); // NOI18N
-        jlabTempo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 20));
+        jlabTempo.setHorizontalAlignment(javax.swing.SwingConstants.RIGHT);
+        jlabTempo.setText(languages.getString("TIME_ELAPSED_START_MINI")); // NOI18N
+        jlabTempo.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 5));
+        jlabTempo.setMinimumSize(new java.awt.Dimension(80, 30));
         jlabTempo.setName("Tempo Transcorrido: "); // NOI18N
         jpanStatusBar.add(jlabTempo);
 
@@ -229,26 +252,22 @@ public class Board extends javax.swing.JFrame {
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jpanMineField, javax.swing.GroupLayout.PREFERRED_SIZE, 765, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addGap(0, 0, 0)
+                .addComponent(jpanMineField, javax.swing.GroupLayout.DEFAULT_SIZE, 502, Short.MAX_VALUE)
+                .addGap(0, 0, 0))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(layout.createSequentialGroup()
-                    .addContainerGap()
-                    .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, 765, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)))
+                .addComponent(jpanStatusBar, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.DEFAULT_SIZE, 502, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addContainerGap()
-                .addComponent(jpanMineField, javax.swing.GroupLayout.PREFERRED_SIZE, 410, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addContainerGap(41, Short.MAX_VALUE))
+                .addGap(0, 0, 0)
+                .addComponent(jpanMineField, javax.swing.GroupLayout.DEFAULT_SIZE, 497, Short.MAX_VALUE)
+                .addGap(35, 35, 35))
             .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                 .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                    .addContainerGap(421, Short.MAX_VALUE)
-                    .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addContainerGap()))
+                    .addGap(0, 496, Short.MAX_VALUE)
+                    .addComponent(jpanStatusBar, javax.swing.GroupLayout.PREFERRED_SIZE, 36, javax.swing.GroupLayout.PREFERRED_SIZE)))
         );
 
         pack();
@@ -267,7 +286,11 @@ public class Board extends javax.swing.JFrame {
         loadConfigForm();
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
-    private void novoJogo() {
+    public void startNewGame() {
+        
+    }
+    
+    public void novoJogo() {
         clearBoard();
         if (hasGameStarted()) {
             setFirstClick(true);
@@ -277,6 +300,10 @@ public class Board extends javax.swing.JFrame {
         iniciarJogo();
         relogio.reiniciar();
         restartMines();
+        if (!running){
+            controlador.start();
+            running = true;
+        }
     }
     
     private void initBoard() throws Exception {
@@ -288,70 +315,70 @@ public class Board extends javax.swing.JFrame {
             for (int j = 0; j < getNCols(); j++) {
                 cell = new Cell(new Point(i, j));
                 cell.setMyBoard(this);
-                this.boardMap.put(cell.getPosition(), cell);
+                this.getBoardMap().put(cell.getPosition(), cell);
             }
         }
         
         // BoardMap
         // Conectando as células entre si pelo perímetro
         Point point = new Point();
-        this.boardMap.forEach((p, c) -> {
+        this.getBoardMap().forEach((p, c) -> {
             // Superior Esquerda
             point.setLocation(p.x -1, p.y - 1);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Superior
             point.setLocation(p.x, p.y - 1);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Superior Direita
             point.setLocation(p.x + 1, p.y - 1);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Direita
             point.setLocation(p.x + 1, p.y);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Inferior Direita
             point.setLocation(p.x + 1, p.y + 1);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Inferior
             point.setLocation(p.x, p.y + 1);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Inferior Esquerda
             point.setLocation(p.x - 1, p.y + 1);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
             // Esquerda
             point.setLocation(p.x - 1, p.y);
-            if (boardMap.containsKey(point)) {
-                c.getPerimeter().add(boardMap.get(point));
+            if (getBoardMap().containsKey(point)) {
+                c.getPerimeter().add(getBoardMap().get(point));
             }
         });
     }
     
-    private void checkBoard() {
-        // First, check if all mines were flagmarked successfully.
-        if (isGameOn()) {
-            if (boardMap.areAllMinesFlagged()) {
-                setGameOver(true);
-                boardMap.flagRemainingCells();
-                boardMap.revealAllCells();
-                if (showConfirmationMessage(languages.getString("CONGRATULATIONS"), null)) {
-                    novoJogo();
-                }
-            }
-        }
-    }
+//    private void checkBoard() {
+//        // First, check if all mines were flagmarked successfully.
+//        if (isGameOn()) {
+//            if (getBoardMap().areAllMinesFlagged()) {
+//                setGameOver(true);
+//                getBoardMap().flagRemainingCells();
+//                getBoardMap().revealAllCells();
+//                if (showConfirmationMessage(languages.getString("CONGRATULATIONS"), null)) {
+//                    novoJogo();
+//                }
+//            }
+//        }
+//    }
     
     /**
      * @param args the command line arguments
@@ -404,8 +431,12 @@ public class Board extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, e.getLocalizedMessage());
         }
         
+        // Redimensionamento
+        Dimension frameSize = new Dimension(getCellSize() * getNRows() + 25, getCellSize() * getNCols() + 105);
+        this.setSize(frameSize);
+        
         // Através da BoardMap
-        this.boardMap.forEach((p, c) -> {
+        this.getBoardMap().forEach((p, c) -> {
             setInitialCellAtributes(c);
             jpanMineField.add(c, new AbsoluteConstraints(p.x * getCellSize() + 5, p.y * getCellSize() + 5, -1, -1));
             c.setVisible(true);
@@ -428,7 +459,7 @@ public class Board extends javax.swing.JFrame {
     }
     
     public void showAllMines() {
-        boardMap.showAllMines();
+        getBoardMap().showAllMines();
         if (showConfirmationMessage(languages.getString("MINESTEPPED"), null)) {
             novoJogo();
         }
@@ -438,7 +469,7 @@ public class Board extends javax.swing.JFrame {
         // Colocando as minas, sempre testando que todas tenham sua célula
         int minesLeft = _minesQty, i, j;
         Point aux = new Point();
-        ArrayList<Point> positions = boardMap.get(new Point(hPos, vPos)).getPerimeter().getPerimeterPositions();
+        ArrayList<Point> positions = getBoardMap().get(new Point(hPos, vPos)).getPerimeter().getPerimeterPositions();
         positions.add(new Point(hPos, vPos)); // adding cell's own position
         for (; minesLeft > 0;) {
             do {
@@ -448,8 +479,8 @@ public class Board extends javax.swing.JFrame {
             } while (positions.contains(aux));
             // Por BoardMap
             if (!boardMap.get(aux).isMine()) {
-                boardMap.get(aux).setMine();
-                boardMap.get(aux).increasePerimeterNumbers();
+                getBoardMap().get(aux).setMine();
+                getBoardMap().get(aux).increasePerimeterNumbers();
                 minesLeft--;
             }
         }
@@ -461,7 +492,7 @@ public class Board extends javax.swing.JFrame {
         jlabMinas.setText(MENSAGEM_MINAS + _minesQty);
     }
 
-    private boolean showConfirmationMessage(String title, String message) {
+    public boolean showConfirmationMessage(String title, String message) {
         return (JOptionPane.YES_OPTION == JOptionPane.showConfirmDialog(
                 this, 
                 (message == null) ? languages.getString("START_NEW") : message, 
@@ -489,11 +520,11 @@ public class Board extends javax.swing.JFrame {
     }
 
     private void initPreferences() {
-        _minesQty = configForm.getPreferenceFromIni(Configuration.Prefs.MINES_QTY);
-        _nRows = configForm.getPreferenceFromIni(Configuration.Prefs.N_ROWS);
-        _nCols = configForm.getPreferenceFromIni(Configuration.Prefs.N_COLS);
-        _cellSize = configForm.getPreferenceFromIni(Configuration.Prefs.CELL_SIZE);
-        _pointCost = configForm.getPreferenceFromIni(Configuration.Prefs.POINTS_COST);
+        _minesQty = configForm.getPreferenceFromIni(Configuration.Prefs.MINES_QTY_EXPERT);
+        _nRows = configForm.getPreferenceFromIni(Configuration.Prefs.N_ROWS_EXPERT);
+        _nCols = configForm.getPreferenceFromIni(Configuration.Prefs.N_COLS_EXPERT);
+        _cellSize = configForm.getPreferenceFromIni(Configuration.Prefs.CELL_SIZE_DEFAULT);
+        _pointCost = configForm.getPreferenceFromIni(Configuration.Prefs.POINTS_COST_EXPERT);
     }
 
     protected class CellAdapter extends MouseAdapter  {
@@ -515,8 +546,6 @@ public class Board extends javax.swing.JFrame {
                             setFirstClick(true);
                             showAllMines();
                         }
-
-                        checkBoard();
                     }
                 }
                 
@@ -533,8 +562,6 @@ public class Board extends javax.swing.JFrame {
                             addGoldCoins(-getPointCost());
                         }
                     }
-                    
-                    checkBoard();
                 }
 
                 // Marcação de célula
@@ -553,7 +580,6 @@ public class Board extends javax.swing.JFrame {
                             if (cell.isMine()) 
                                 addSuccesfulGuess(-1);
                         }
-                        checkBoard();
                     }
                 } 
 
@@ -572,7 +598,6 @@ public class Board extends javax.swing.JFrame {
                             setFirstClick(true);
                             showAllMines();
                         }
-                        checkBoard();
                     } 
                 }
             }
@@ -599,6 +624,10 @@ public class Board extends javax.swing.JFrame {
             
             return true;
         }
+        
+        public long remainingCoveredCells() {
+            return values().stream().filter(c -> c.isCovered()).count();
+        } 
         
         public void showAllMines() {
             values().stream().filter(c -> c.isMine() || c.isFlagMarked()).forEach(c -> {
@@ -671,5 +700,17 @@ public class Board extends javax.swing.JFrame {
      */
     public  void setCellSize(int aCellSize) {
         _cellSize = aCellSize;
+    }
+    
+    public final class WindowLayoutEvent extends WindowEvent {
+        
+        public WindowLayoutEvent(Window source, int id) {
+            super(source, id);
+        }
+        
+    }
+    
+    public interface WindowResizeListener {
+        public abstract void windowResized(WindowEvent we);
     }
 }
